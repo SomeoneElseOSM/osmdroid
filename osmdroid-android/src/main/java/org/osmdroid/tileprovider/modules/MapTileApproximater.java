@@ -16,6 +16,7 @@ import org.osmdroid.util.MapTileIndex;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The MapTileApproximater computes approximation of tiles.
@@ -27,7 +28,7 @@ import java.util.List;
  */
 public class MapTileApproximater extends MapTileModuleProviderBase {
 
-    private final List<MapTileModuleProviderBase> mProviders = new ArrayList<>();
+    private final List<MapTileModuleProviderBase> mProviders = new CopyOnWriteArrayList<>();
     private int minZoomLevel;
 
     /**
@@ -179,7 +180,7 @@ public class MapTileApproximater extends MapTileModuleProviderBase {
                 MapTileIndex.getX(pMapTileIndex) >> pZoomDiff,
                 MapTileIndex.getY(pMapTileIndex) >> pZoomDiff);
         try {
-            final Drawable srcDrawable = pProvider.getTileLoader().loadTile(srcTile);
+            final Drawable srcDrawable = pProvider.getTileLoader().loadTileIfReachable(srcTile);
             if (!(srcDrawable instanceof BitmapDrawable)) {
                 return null;
             }

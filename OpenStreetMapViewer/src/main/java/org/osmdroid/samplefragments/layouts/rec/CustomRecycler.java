@@ -8,7 +8,6 @@ package org.osmdroid.samplefragments.layouts.rec;
  */
 
 import android.content.Context;
-import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,7 +54,7 @@ public class CustomRecycler extends RecyclerView.Adapter<CustomRecycler.ViewHold
         public MapViewHolder(View v) {
             super(v);
 
-            this.mapaShow = (MapView) v.findViewById(R.id.mapShow);
+            this.mapaShow = v.findViewById(R.id.mapShow);
         }
     }
     /*
@@ -69,8 +68,8 @@ public class CustomRecycler extends RecyclerView.Adapter<CustomRecycler.ViewHold
 
         public InfoDataViewHolder(View v) {
             super(v);
-            this.TitleInfoTxt = (TextView) v.findViewById(R.id.TitleInfoTxt);
-            this.ContentInfodata = (TextView) v.findViewById(R.id.ContentInfodata);
+            this.TitleInfoTxt = v.findViewById(R.id.TitleInfoTxt);
+            this.ContentInfodata = v.findViewById(R.id.ContentInfodata);
 
         }
     }
@@ -114,7 +113,6 @@ public class CustomRecycler extends RecyclerView.Adapter<CustomRecycler.ViewHold
 
             Info dat = data.get(position);
             MapViewHolder Indicador = (MapViewHolder) viewHolder;
-            Indicador.mapaShow.setBuiltInZoomControls(true);
             Indicador.mapaShow.setMultiTouchControls(true);
             Indicador.mapaShow.setClickable(false);
 

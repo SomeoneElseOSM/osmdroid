@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import org.osmdroid.R;
 import org.osmdroid.events.MapListener;
@@ -12,7 +11,6 @@ import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.samplefragments.BaseSampleFragment;
 import org.osmdroid.tileprovider.tilesource.MapBoxTileSource;
-import org.osmdroid.tileprovider.tilesource.MapQuestTileSource;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
@@ -36,8 +34,8 @@ public class SampleSplitScreen extends BaseSampleFragment implements MapListener
 
         View root = inflater.inflate(R.layout.map_splitscreen, container, false);
 
-        mMapView = (MapView) root.findViewById(R.id.mapview1);
-        mMapView2 = (MapView) root.findViewById(R.id.mapview2);
+        mMapView = root.findViewById(R.id.mapview1);
+        mMapView2 = root.findViewById(R.id.mapview2);
 
         return root;
     }
@@ -55,7 +53,6 @@ public class SampleSplitScreen extends BaseSampleFragment implements MapListener
         mMapView2.setTileSource(new MapBoxTileSource(getContext()));
         mMapView2.setMapListener(this);
 
-        mMapView2.setBuiltInZoomControls(true);
         mMapView2.setMultiTouchControls(true);
         mMapView2.setTilesScaledToDpi(true);
     }

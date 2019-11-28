@@ -13,6 +13,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.Projection;
@@ -44,7 +45,8 @@ public class CustomPaintingSurface extends View {
     public enum Mode{
         Polyline,
         Polygon,
-        PolygonHole
+        PolygonHole,
+        PolylineAsPath
     }
     protected boolean withArrows=false;
     private Bitmap  mBitmap;
@@ -122,20 +124,22 @@ public class CustomPaintingSurface extends View {
                 GeoPoint iGeoPoint = (GeoPoint) projection.fromPixels(unrotatedPoint.x, unrotatedPoint.y);
                 geoPoints.add(iGeoPoint);
             }
-            //geoPoints = PointReducer.reduceWithTolerance(geoPoints, 1.0);
-            //TODO run the douglas pucker algorithm to reduce the points for performance reasons
+
             if (geoPoints.size() > 2) {
                 //only plot a line unless there's at least one item
                 switch (drawingMode) {
                     case Polyline:
-                        final int color = Color.BLACK;
-                        Polyline line = new Polyline(map);
+                    case PolylineAsPath:
+                        final boolean asPath = drawingMode == Mode.PolylineAsPath;
+                        final int color = Color.argb(100, 100, 100, 100);
+                        final Polyline line = new Polyline(map, asPath);
                         line.setInfoWindow(
                                 new BasicInfoWindow(org.osmdroid.library.R.layout.bonuspack_bubble, map));
-                        line.setColor(color);
-                        line.setTitle("This is a polyline");
+                        line.getOutlinePaint().setColor(color);
+                        line.setTitle("This is a polyline" + (asPath ? " as Path" : ""));
                         line.setPoints(geoPoints);
                         line.showInfoWindow();
+                        line.getOutlinePaint().setStrokeCap(Paint.Cap.ROUND);
                         //example below
                         /*
                         line.setOnClickListener(new Polyline.OnClickListener() {
@@ -165,6 +169,7 @@ public class CustomPaintingSurface extends View {
                             ));
                             line.setMilestoneManagers(managers);
                         }
+                        line.setSubDescription(BoundingBox.fromGeoPoints(line.getPoints()).toString());
                         map.getOverlayManager().add(line);
                         lastPolygon=null;
                         break;
@@ -172,12 +177,12 @@ public class CustomPaintingSurface extends View {
                         Polygon polygon = new Polygon(map);
                         polygon.setInfoWindow(
                                 new BasicInfoWindow(org.osmdroid.library.R.layout.bonuspack_bubble, map));
-                        polygon.setFillColor(Color.argb(75, 255,0,0));
+                        polygon.getFillPaint().setColor(Color.argb(75, 255,0,0));
                         polygon.setPoints(geoPoints);
                         polygon.setTitle("A sample polygon");
                         polygon.showInfoWindow();
                         if (withArrows) {
-                            final Bitmap bitmap = BitmapFactory.decodeResource(getResources(), org.osmdroid.library.R.drawable.direction_arrow);
+                            final Bitmap bitmap = BitmapFactory.decodeResource(getResources(), org.osmdroid.library.R.drawable.round_navigation_white_48);
                             final List<MilestoneManager> managers = new ArrayList<>();
                             managers.add(new MilestoneManager(
                                     new MilestonePixelDistanceLister(20, 200),
@@ -194,6 +199,7 @@ public class CustomPaintingSurface extends View {
                                 return false;
                             }
                         });
+                        //polygon.setSubDescription(BoundingBox.fromGeoPoints(polygon.getPoints()).toString());
                         map.getOverlayManager().add(polygon);
                         lastPolygon=polygon;
                         break;

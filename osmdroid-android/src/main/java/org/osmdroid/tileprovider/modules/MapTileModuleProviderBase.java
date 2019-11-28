@@ -72,6 +72,14 @@ public abstract class MapTileModuleProviderBase {
 	public abstract int getMaximumZoomLevel();
 
 	/**
+	 * @since 6.1.3
+	 */
+	public boolean isTileReachable(final long pMapTileIndex) {
+		final int zoom = MapTileIndex.getZoom(pMapTileIndex);
+		return zoom >= getMinimumZoomLevel() && zoom <= getMaximumZoomLevel();
+	}
+
+	/**
 	 * Sets the tile source for this tile provider.
 	 *
 	 * @param tileSource
@@ -102,23 +110,20 @@ public abstract class MapTileModuleProviderBase {
 			@Override
 			protected boolean removeEldestEntry(
 					final Map.Entry<Long, MapTileRequestState> pEldest) {
-				if (size() > pPendingQueueSize) {
-					Long result = null;
-
-					// get the oldest tile that isn't in the mWorking queue
-					Iterator<Long> iterator = mPending.keySet().iterator();
-
-					while (result == null && iterator.hasNext()) {
-						final Long mapTileIndex = iterator.next();
-						if (!mWorking.containsKey(mapTileIndex)) {
-							result = mapTileIndex;
+				if (size() <= pPendingQueueSize) {
+					return false;
+				}
+				// get the oldest tile that isn't in the mWorking queue
+				final Iterator<Long> iterator = mPending.keySet().iterator();
+				while (iterator.hasNext()) {
+					final long mapTileIndex = iterator.next();
+					if (!mWorking.containsKey(mapTileIndex)) {
+						final MapTileRequestState state = mPending.get(mapTileIndex);
+						if (state != null) { // check for concurrency reasons
+							removeTileFromQueues(mapTileIndex);
+							state.getCallback().mapTileRequestFailedExceedsMaxQueueSize(state);
+							return false;
 						}
-					}
-
-					if (result != null) {
-						MapTileRequestState state = mPending.get(result);
-						removeTileFromQueues(result);
-						state.getCallback().mapTileRequestFailedExceedsMaxQueueSize(state);
 					}
 				}
 				return false;
@@ -187,7 +192,8 @@ public abstract class MapTileModuleProviderBase {
 	public abstract class TileLoader implements Runnable {
 
 		/**
-		 * Load the requested tile.
+		 * Actual load of the requested tile.
+		 * Do implement this method, but call {@link #loadTileIfReachable(long)} instead
 		 *
 		 * @since 6.0.0
 		 * @return the tile if it was loaded successfully, or null if failed to
@@ -197,10 +203,21 @@ public abstract class MapTileModuleProviderBase {
 		public abstract Drawable loadTile(final long pMapTileIndex)
 				throws CantContinueException;
 
+		/**
+		 * @since 6.1.3
+		 */
+		public Drawable loadTileIfReachable(final long pMapTileIndex)
+				throws CantContinueException {
+			if (!isTileReachable(pMapTileIndex)) {
+				return null;
+			}
+			return loadTile(pMapTileIndex);
+		}
+
 		@Deprecated
 		protected Drawable loadTile(MapTileRequestState pState)
 				throws CantContinueException {
-			return loadTile(pState.getMapTile());
+			return loadTileIfReachable(pState.getMapTile());
 		}
 
 		protected void onTileLoaderInit() {
@@ -312,7 +329,7 @@ public abstract class MapTileModuleProviderBase {
 				}
 				try {
 					result = null;
-					result = loadTile(state.getMapTile());
+					result = loadTileIfReachable(state.getMapTile());
 				} catch (final CantContinueException e) {
 					Log.i(IMapView.LOGTAG,"Tile loader can't continue: " + MapTileIndex.toString(state.getMapTile()), e);
 					clearQueue();
@@ -332,22 +349,6 @@ public abstract class MapTileModuleProviderBase {
 			}
 
 			onTileLoaderShutdown();
-		}
-	}
-
-	/**
-	 * Thrown by a tile provider module in TileLoader.loadTile() to signal that it can no longer
-	 * function properly. This will typically clear the pending queue.
-	 */
-	public class CantContinueException extends Exception {
-		private static final long serialVersionUID = 146526524087765133L;
-
-		public CantContinueException(final String pDetailMessage) {
-			super(pDetailMessage);
-		}
-
-		public CantContinueException(final Throwable pThrowable) {
-			super(pThrowable);
 		}
 	}
 }
